@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>随机音符生成器</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f8e0ef;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        input {
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px 0 0 8px;
+            width: 70%;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            border-color: #3498db;
+        }
+        
+        button {
+            padding: 12px 25px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        #startBtn {
+            background-color: #ffc7ea;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        #startBtn:hover {
+            background-color: #fbd4ff;
+        }
+        
+        #startBtn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        #stopBtn {
+            background-color: #f1b6af;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        #stopBtn:hover {
+            background-color: #c0392b;
+        }
+        
+        #stopBtn:disabled {
+            background-color: #f8d2f6;
+            cursor: not-allowed;
+        }
+        
+        .note-display {
+            font-size: 80px;
+            font-weight: bold;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            color: #2c3e50;
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .timer {
+            font-size: 18px;
+            color: #7f8c8d;
+            margin-top: 15px;
+        }
+        
+        .instructions {
+            margin-top: 25px;
+            color: #7f8c8d;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>随机音符生成器</h1>
+        <div class="input-group">
+            <input type="number" id="noteCount" placeholder="输入音符数量 (n)">
+            <button id="startBtn">开始</button>
+        </div>
+        <button id="stopBtn">停止</button>
+        <div class="note-display" id="noteDisplay">--</div>
+        <div class="timer" id="timer">剩余时间: 2:00</div>
+        <div class="instructions">
+            <p>音符将从以下选项中随机选择: C, C#, D, D#, E, F, F#, G, G#, A, A#, B</p>
+            <p>每个音符显示时间: <span id="intervalDisplay">2.00</span> 秒</p>
+            <p>总持续时间: 2分钟</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const noteDisplay = document.getElementById('noteDisplay');
+            const noteCountInput = document.getElementById('noteCount');
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const timerDisplay = document.getElementById('timer');
+            const intervalDisplay = document.getElementById('intervalDisplay');
+
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            let intervalId = null;
+            let timeoutId = null;
+            let timerIntervalId = null;
+            let secondsRemaining = 120;
+
+            // 获取随机音符
+            function getRandomNote() {
+                const randomIndex = Math.floor(Math.random() * notes.length);
+                return notes[randomIndex];
+            }
+
+            // 更新计时器显示
+            function updateTimerDisplay() {
+                const minutes = Math.floor(secondsRemaining / 60);
+                const seconds = secondsRemaining % 60;
+                timerDisplay.textContent = `剩余时间: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            }
+
+            // 停止生成音符
+            function stopNoteGeneration() {
+                clearInterval(intervalId);
+                clearInterval(timerIntervalId);
+                clearTimeout(timeoutId);
+
+                noteDisplay.textContent = "已停止";
+                noteCountInput.disabled = false;
+                startBtn.disabled = false;
+                stopBtn.style.display = 'none';
+            }
+
+            // 开始生成音符
+            function startNoteGeneration() {
+                const noteCount = parseInt(noteCountInput.value);
+
+                if (isNaN(noteCount) || noteCount <= 0) {
+                    alert('请输入有效的音符数量');
+                    return;
+                }
+
+                // 计算每个音符的显示时间 (120/n)
+                const intervalTime = 120 / noteCount;
+                intervalDisplay.textContent = intervalTime.toFixed(2);
+
+                // 禁用输入和开始按钮，显示停止按钮
+                noteCountInput.disabled = true;
+                startBtn.disabled = true;
+                stopBtn.style.display = 'block';
+                stopBtn.disabled = false;
+
+                // 重置状态
+                secondsRemaining = 120;
+                updateTimerDisplay();
+                clearInterval(intervalId);
+                clearInterval(timerIntervalId);
+                clearTimeout(timeoutId);
+
+                let notesGenerated = 0;
+
+                // 设置每秒更新计时器的定时器
+                timerIntervalId = setInterval(() => {
+                    secondsRemaining--;
+                    updateTimerDisplay();
+
+                    if (secondsRemaining <= 0) {
+                        stopNoteGeneration();
+                    }
+                }, 1000);
+
+                // 显示第一个音符
+                noteDisplay.textContent = getRandomNote();
+                notesGenerated++;
+
+                // 设置2分钟的总时长
+                timeoutId = setTimeout(() => {
+                    stopNoteGeneration();
+                }, 120 * 1000);
+
+                // 设置动态间隔时间 (120/n 秒)
+                intervalId = setInterval(() => {
+                    if (notesGenerated < noteCount) {
+                        noteDisplay.textContent = getRandomNote();
+                        notesGenerated++;
+                    } else {
+                        // 如果已经生成了所有音符但时间还没到，停止生成新音符
+                        clearInterval(intervalId);
+                    }
+                }, intervalTime * 1000);
+            }
+
+            startBtn.addEventListener('click', startNoteGeneration);
+            stopBtn.addEventListener('click', stopNoteGeneration);
+
+            // 支持按Enter开始
+            noteCountInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    startNoteGeneration();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
