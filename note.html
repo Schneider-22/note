@@ -216,8 +216,8 @@
                     }
                 }, 1000);
 
-                // 显示第一个音符
-                noteDisplay.textContent = getRandomNote();
+                // 显示第一个音符（带序号1）
+                noteDisplay.textContent = `1. ${getRandomNote()}`;
                 notesGenerated++;
 
                 // 设置2分钟的总时长
@@ -228,7 +228,8 @@
                 // 设置动态间隔时间 (120/n 秒)
                 intervalId = setInterval(() => {
                     if (notesGenerated < noteCount) {
-                        noteDisplay.textContent = getRandomNote();
+                        // 显示下一个音符（带序号）
+                        noteDisplay.textContent = `${notesGenerated + 1}. ${getRandomNote()}`;
                         notesGenerated++;
                     } else {
                         // 如果已经生成了所有音符但时间还没到，停止生成新音符
